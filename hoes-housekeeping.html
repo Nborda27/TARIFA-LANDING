@@ -1,0 +1,988 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Housekeeping QR · HOES</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,1,0&display=block" rel="stylesheet">
+<style>
+/* Layout: escenario 16:9 fijo (1600×900) escalado al viewport; diapositivas superpuestas con coreografía por clase .active */
+:root{
+  color-scheme:dark;
+  --night:#0a1524;      /* fondo: navy nocturno del hotel */
+  --navy:#1a2f4e;       /* navy de la app real */
+  --ink:#eaf0f8;        /* texto principal */
+  --mist:#93a4bb;       /* texto secundario */
+  --line:#24395a;       /* bordes sobre fondo oscuro */
+  --brass:#e3ae4f;      /* acento: latón de llave de hotel */
+  --brass-soft:rgba(227,174,79,.14);
+  /* paleta real de la app (componentes) */
+  --app-bg:#f4f6f9; --app-surface:#ffffff; --app-border:#e2e8f0; --app-text:#0f172a; --app-muted:#64748b;
+  --st-pending:#b45309; --st-pending-bg:#fef3c7;
+  --st-cleaning:#ea580c; --st-cleaning-bg:#ffedd5;
+  --st-clean:#15803d; --st-clean-bg:#dcfce7;
+  --st-checked:#1d4ed8; --st-checked-bg:#dbeafe;
+  --st-obs:#7c3aed; --st-obs-bg:#ede9fe;
+  --f-display:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-app:'Inter',system-ui,-apple-system,sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+  --ease:cubic-bezier(.2,.8,.2,1);
+}
+html,body{height:100%}
+body{margin:0;background:var(--night);color:var(--ink);font-family:var(--f-app);overflow:hidden;-webkit-font-smoothing:antialiased}
+.ms{font-family:'Material Symbols Rounded';font-weight:normal;font-style:normal;line-height:1;letter-spacing:normal;text-transform:none;white-space:nowrap;direction:ltr;font-feature-settings:'liga';-webkit-font-smoothing:antialiased;display:inline-block;overflow:hidden;width:1em;height:1em}
+
+/* ── Viewport y escenario ── */
+.viewport{position:fixed;inset:0;display:grid;place-items:center;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 64px}
+.stage{width:1600px;height:900px;position:relative;flex:none;transform-origin:center;border-radius:20px;overflow:hidden;background:var(--night);box-shadow:0 0 0 1px var(--line)}
+.bg{position:absolute;inset:0;pointer-events:none}
+.bg::before{content:"";position:absolute;inset:0;background-image:radial-gradient(circle,rgba(147,164,187,.16) 1px,transparent 1.4px);background-size:28px 28px;mask-image:radial-gradient(ellipse 80% 70% at 60% 40%,#000 30%,transparent 80%)}
+.blob{position:absolute;width:900px;height:900px;border-radius:50%;filter:blur(90px);opacity:.55;background:radial-gradient(circle,#1d3a66,transparent 65%);left:var(--bx,40%);top:var(--by,-30%);transition:left 1.4s var(--ease),top 1.4s var(--ease)}
+.blob.b2{width:600px;height:600px;background:radial-gradient(circle,rgba(227,174,79,.22),transparent 65%);left:var(--cx,70%);top:var(--cy,55%)}
+
+/* ── Diapositivas ── */
+.slide{position:absolute;inset:0;padding:84px 104px 96px;display:grid;visibility:hidden;opacity:0;transition:opacity .6s var(--ease),visibility 0s .6s}
+.slide.active{visibility:visible;opacity:1;transition:opacity .6s var(--ease)}
+.in{opacity:1}
+.slide.active .in{animation:rise .9s var(--ease) both;animation-delay:var(--d,0s)}
+.slide.active .in.fade{animation-name:fade}
+.slide.active .in.left{animation-name:fromLeft}
+.slide.active .in.pop{animation-name:pop}
+@keyframes rise{from{opacity:0;transform:translateY(38px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes fromLeft{from{opacity:0;transform:translateX(-60px)}to{opacity:1;transform:none}}
+@keyframes pop{0%{opacity:0;transform:scale(.6)}70%{transform:scale(1.04)}100%{opacity:1;transform:none}}
+
+.eyebrow{font-family:var(--f-app);font-weight:500;font-size:16px;letter-spacing:.16em;text-transform:uppercase;color:var(--brass);display:flex;align-items:center;gap:14px}
+.eyebrow::before{content:"";width:34px;height:2px;background:var(--brass)}
+h1,h2{font-family:var(--f-display);font-weight:300;letter-spacing:-.025em;margin:0;text-wrap:balance;line-height:1.05}
+h1 .brass,h2 .brass{font-weight:400}
+h2{font-size:84px}
+.lede{font-size:27px;line-height:1.45;color:var(--mist);max-width:30ch;margin:0}
+.lede b{color:var(--ink);font-weight:500}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:center}
+.stack{display:flex;flex-direction:column;gap:28px;min-width:0}
+.mono{font-family:var(--f-mono)}
+.tag{font-family:var(--f-app);font-weight:500;font-size:13px;letter-spacing:.06em;text-transform:uppercase;padding:6px 12px;border-radius:999px;border:1px dashed var(--brass);color:var(--brass);align-self:flex-start}
+
+/* palabra que se revela */
+.reveal{display:inline-block;overflow:hidden;vertical-align:bottom;padding-bottom:.08em}
+.reveal>span{display:inline-block}
+.slide.active .reveal>span{animation:wordUp 1s var(--ease) both;animation-delay:var(--d,0s)}
+@keyframes wordUp{from{transform:translateY(105%)}to{transform:none}}
+.brass{color:var(--brass)}
+
+/* ── S1 portada ── */
+.cover{grid-template-columns:1.15fr .85fr;align-items:center;gap:40px}
+.cover h1{font-size:132px;line-height:1}
+.cover .lede{font-size:30px;max-width:24ch}
+.byline{display:flex;gap:18px;align-items:center;font-size:20px;color:var(--mist)}
+.byline b{color:var(--ink);font-weight:500}
+.keytag{justify-self:center;width:400px;background:var(--app-surface);border-radius:30px 30px 30px 30px;padding:40px 40px 34px;color:var(--app-text);position:relative;box-shadow:0 40px 80px rgba(0,0,0,.45);transform:rotate(-4deg)}
+.keytag::before{content:"";position:absolute;top:22px;left:50%;width:26px;height:26px;margin-left:-13px;border-radius:50%;background:var(--night);box-shadow:inset 0 0 0 4px var(--brass)}
+.keytag .room{font-family:var(--f-display);font-weight:500;font-size:64px;text-align:center;margin:26px 0 18px;letter-spacing:-.02em;color:var(--navy)}
+.keytag .room small{display:block;font-family:var(--f-app);font-size:14px;letter-spacing:.2em;color:var(--app-muted);font-weight:400}
+.qr{display:grid;grid-template-columns:repeat(25,1fr);gap:1px;width:100%;aspect-ratio:1;position:relative;max-width:100%}
+.qr i{background:var(--navy);border-radius:1.5px;opacity:0}
+.slide.active .qr i{animation:pix .5s var(--ease) both;animation-delay:var(--q)}
+@keyframes pix{from{opacity:0;transform:scale(0)}to{opacity:1;transform:none}}
+.qr i.off{visibility:hidden}
+.scanline{position:absolute;left:-6%;right:-6%;height:4px;background:var(--brass);box-shadow:0 0 22px 6px rgba(227,174,79,.6);top:0;opacity:0;border-radius:4px}
+.slide.active .scanline{animation:sweep 2.6s ease-in-out 2.2s infinite}
+@keyframes sweep{0%{top:0;opacity:0}10%{opacity:1}50%{top:100%}90%{opacity:1}100%{top:0;opacity:0}}
+.keytag .foot{font-family:var(--f-app);font-size:12px;color:var(--app-muted);text-align:center;margin-top:16px;letter-spacing:.1em}
+
+/* ── S2 problema ── */
+.paper{width:560px;background:#f3eee2;color:#3b3a36;border-radius:6px;padding:34px 38px;transform:rotate(-3deg);box-shadow:0 30px 60px rgba(0,0,0,.5);font-family:var(--f-app);font-size:16px;position:relative}
+.paper h4{margin:0 0 16px;font-family:var(--f-app);font-size:18px;letter-spacing:.06em;text-transform:uppercase}
+.paper table{width:100%;border-collapse:collapse}
+.paper td,.paper th{border-bottom:1px solid #c9c1ad;padding:10px 6px;text-align:left}
+.paper th{font-size:12px;letter-spacing:.08em;color:#7a7465}
+.scrawl{font-family:var(--f-app);font-style:italic;color:#2a4b8d}
+.paper .q{color:#b91c1c;font-weight:700}
+.paper .stain{position:absolute;right:40px;bottom:30px;width:120px;height:120px;border-radius:50%;border:10px solid rgba(140,100,40,.18)}
+.pains{display:flex;flex-direction:column;gap:30px}
+.pain{display:grid;grid-template-columns:64px 1fr;gap:22px;align-items:start}
+.pain .ms{font-size:34px;width:64px;height:64px;display:grid;place-items:center;border-radius:16px;background:var(--brass-soft);color:var(--brass)}
+.pain h3{margin:4px 0 6px;font-family:var(--f-display);font-size:32px;font-weight:500;letter-spacing:-.005em}
+.pain p{margin:0;font-size:21px;color:var(--mist);line-height:1.45}
+
+/* ── componentes reales de la app ── */
+.phone{width:400px;height:780px;border-radius:52px;background:#05090f;padding:14px;box-shadow:0 0 0 2px #2a3a52,0 50px 90px rgba(0,0,0,.55);justify-self:center;position:relative}
+.screen{width:100%;height:100%;border-radius:40px;background:var(--app-bg);overflow:hidden;position:relative;font-family:var(--f-app);color:var(--app-text);font-size:14px}
+.notch{position:absolute;top:10px;left:50%;width:110px;height:28px;margin-left:-55px;background:#05090f;border-radius:20px;z-index:5}
+.navbar{height:56px;background:#fff;border-bottom:1px solid var(--app-border);display:flex;align-items:center;justify-content:space-between;padding:0 18px;margin-top:44px;color:var(--navy);font-weight:600;font-size:15px}
+.navbar b{font-weight:800}
+.view{position:absolute;inset:100px 0 0;padding:18px;opacity:0;transform:translateX(30px);transition:opacity .45s var(--ease),transform .45s var(--ease);pointer-events:none}
+.view.on{opacity:1;transform:none}
+.login-card{background:#fff;border:1px solid var(--app-border);border-radius:10px;padding:28px 22px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.login-icon{width:56px;height:56px;background:#eef4fb;color:var(--navy);border-radius:50%;display:grid;place-items:center;margin:0 auto 14px;font-size:24px}
+.login-card h1{font-family:var(--f-app);font-size:18px;letter-spacing:0;font-weight:700;margin-bottom:4px;line-height:1.2}
+.login-sub{font-size:13px;color:var(--app-muted);margin-bottom:20px}
+.pin-display{display:flex;justify-content:center;gap:14px;margin-bottom:20px}
+.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid #cbd5e1;transition:all .18s ease}
+.pin-dot.filled{background:var(--navy);border-color:var(--navy)}
+.pin-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.pin-keypad span{background:var(--app-bg);border:1px solid var(--app-border);height:52px;border-radius:6px;display:grid;place-items:center;font-size:20px;font-weight:600;transition:all .15s}
+.pin-keypad span.press{background:#cbd5e1;transform:scale(.94)}
+.pin-keypad .go{background:var(--navy);color:#fff;border-color:var(--navy)}
+.scan-hero{background:var(--navy);color:#fff;border-radius:10px;padding:22px;display:flex;flex-direction:column;gap:14px;margin-bottom:14px}
+.shift{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;opacity:.75;display:flex;align-items:center;gap:6px}
+.shift::before{content:"";width:8px;height:8px;border-radius:50%;background:#4ade80}
+.scan-hero h3{margin:0;font-size:22px;font-weight:700}
+.scan-hero p{margin:0;font-size:13px;opacity:.8;line-height:1.4}
+.btn-scan{background:#fff;color:var(--navy);border-radius:8px;padding:13px;font-weight:700;display:flex;gap:8px;align-items:center;justify-content:center;font-size:15px}
+.btn-scan.pulse{animation:pulse 1s ease 2}
+@keyframes pulse{50%{transform:scale(1.05);box-shadow:0 0 0 8px rgba(255,255,255,.25)}}
+.section-card{background:#fff;border:1px solid var(--app-border);border-radius:10px;padding:16px}
+.section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.section-head h4{margin:0;font-size:14px}
+.count{background:#eef4fb;color:var(--navy);font-weight:700;border-radius:999px;padding:2px 10px;font-size:13px}
+.logrow{display:flex;justify-content:space-between;padding:9px 0;border-top:1px solid var(--app-border);font-size:13px}
+.logrow b{font-weight:600}
+.logrow span{color:var(--app-muted)}
+.camera{position:absolute;inset:0;background:#0d0f12;display:grid;place-items:center}
+.camera .frame{width:220px;height:220px;position:relative;display:grid;place-items:center}
+.camera .frame::before{content:"";position:absolute;inset:0;border:3px solid rgba(255,255,255,.9);border-radius:16px;clip-path:polygon(0 0,30% 0,30% 4px,70% 4px,70% 0,100% 0,100% 30%,calc(100% - 4px) 30%,calc(100% - 4px) 70%,100% 70%,100% 100%,70% 100%,70% calc(100% - 4px),30% calc(100% - 4px),30% 100%,0 100%,0 70%,4px 70%,4px 30%,0 30%)}
+.camera .qr.small{width:160px;background:#fff;padding:10px;border-radius:6px;box-sizing:content-box}
+.camera .qr.small i{opacity:1;animation:none!important}
+.camera .scanline{opacity:1;animation:sweep 1.4s ease-in-out infinite!important;left:-10px;right:-10px}
+.camera p{position:absolute;bottom:60px;color:#fff;font-size:13px;opacity:.8;margin:0}
+.modal{position:absolute;left:18px;right:18px;bottom:24px;background:#fff;border-radius:14px;padding:22px;box-shadow:0 -10px 40px rgba(0,0,0,.25);text-align:center;transform:translateY(120%);transition:transform .5s var(--ease)}
+.modal.on{transform:none}
+.modal .ok{width:56px;height:56px;border-radius:50%;background:var(--st-clean-bg);color:var(--st-clean);display:grid;place-items:center;margin:0 auto 10px;font-size:30px}
+.modal h4{margin:0 0 4px;font-size:18px}
+.modal p{margin:0;color:var(--app-muted);font-size:13px}
+.caps{display:flex;flex-direction:column;gap:20px}
+.cap{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center;padding:20px 24px;border:1px solid var(--line);border-radius:16px;background:rgba(26,47,78,.35);transition:border-color .4s,background .4s}
+.cap.lit{border-color:var(--brass);background:var(--brass-soft)}
+.cap .ms{font-size:32px;color:var(--brass)}
+.cap h3{margin:0;font-family:var(--f-display);font-weight:500;font-size:28px}
+.cap p{margin:2px 0 0;font-size:19px;color:var(--mist)}
+
+/* ── S4 antes / ahora ── */
+.compare{display:grid;grid-template-columns:220px 1fr 60px 1fr;row-gap:16px;column-gap:24px;align-items:center;margin-top:44px}
+.compare .h{font-family:var(--f-app);font-weight:500;font-size:15px;letter-spacing:.12em;text-transform:uppercase;color:var(--mist)}
+.compare .k{font-family:var(--f-display);font-size:25px;font-weight:500}
+.compare .old,.compare .new{font-size:23px;padding:18px 22px;border-radius:12px}
+.compare .old{color:var(--mist);background:rgba(147,164,187,.07);position:relative}
+.compare .old::after{content:"";position:absolute;left:18px;right:18px;top:50%;height:2px;background:#d4574e;transform:scaleX(0);transform-origin:left}
+.slide.active .compare .old::after{animation:strike .6s var(--ease) both;animation-delay:calc(var(--d) + .5s)}
+@keyframes strike{to{transform:scaleX(1)}}
+.compare .new{background:var(--brass-soft);color:var(--ink);font-weight:500;border:1px solid rgba(227,174,79,.4)}
+.compare .arrow{color:var(--brass);font-size:34px;text-align:center}
+
+/* ── S5 panel en vivo ── */
+.impact{grid-template-columns:1.15fr .85fr;gap:64px;align-items:center}
+.panel{background:var(--app-bg);border-radius:18px;padding:22px;color:var(--app-text);box-shadow:0 40px 80px rgba(0,0,0,.45);font-family:var(--f-app)}
+.panel .bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;font-weight:600;color:var(--navy);font-size:16px}
+.live{font-size:12px;font-weight:600;color:var(--st-clean);display:flex;align-items:center;gap:6px;text-transform:uppercase;letter-spacing:.06em}
+.live::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor;animation:blink 1.2s infinite}
+@keyframes blink{50%{opacity:.25}}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.stat{background:#fff;border:1px solid var(--app-border);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.stat b{font-size:28px;font-weight:800;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--app-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.stat.p b{color:var(--st-pending)}.stat.c b{color:var(--st-clean)}.stat.k b{color:var(--st-checked)}
+.floor{font-size:12px;font-weight:700;color:var(--app-muted);text-transform:uppercase;letter-spacing:.08em;margin:10px 2px 8px}
+.rooms{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.room-card{background:#fff;border:1px solid var(--app-border);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;transition:transform .3s}
+.room-card.bump{animation:bump .5s var(--ease)}
+@keyframes bump{40%{transform:scale(1.07)}}
+.room-top{display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:19px}
+.status-dot{width:10px;height:10px;border-radius:50%;transition:background .3s}
+.status-badge{font-size:11px;font-weight:600;border-radius:999px;padding:3px 8px;align-self:flex-start;transition:all .3s}
+.s-pending .status-dot{background:var(--st-pending)}.s-pending .status-badge{background:var(--st-pending-bg);color:var(--st-pending)}
+.s-cleaning .status-dot{background:var(--st-cleaning)}.s-cleaning .status-badge{background:var(--st-cleaning-bg);color:var(--st-cleaning)}
+.s-clean .status-dot{background:var(--st-clean)}.s-clean .status-badge{background:var(--st-clean-bg);color:var(--st-clean)}
+.s-checked .status-dot{background:var(--st-checked)}.s-checked .status-badge{background:var(--st-checked-bg);color:var(--st-checked)}
+.s-checked_obs .status-dot{background:var(--st-obs)}.s-checked_obs .status-badge{background:var(--st-obs-bg);color:var(--st-obs)}
+.kpis{display:flex;flex-direction:column;gap:22px}
+.kpi{border-top:1px solid var(--line);padding-top:16px;display:flex;flex-direction:column;gap:4px}
+.kpi b{font-family:var(--f-display);font-size:124px;font-weight:300;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+.kpi b small{font-size:46px;color:var(--brass);margin-left:8px;font-weight:400}
+.kpi>span{font-size:21px;color:var(--mist)}
+
+/* ── S5b estadísticas (pestaña real del perfil superadmin) ── */
+.statsl{grid-template-columns:380px 1fr;gap:44px;align-items:center;padding-right:72px}
+.links{display:flex;flex-direction:column;gap:12px;margin-top:6px}
+.link{display:grid;grid-template-columns:118px 1fr;align-items:baseline;gap:14px;padding:14px 18px;border:1px solid var(--line);border-radius:14px;transition:border-color .4s,background .4s}
+.link.lit{border-color:var(--brass);background:var(--brass-soft)}
+.link b{font-family:var(--f-display);font-weight:300;font-size:40px;line-height:1;font-variant-numeric:tabular-nums}
+.link b small{font-size:20px;color:var(--brass);margin-left:3px;font-weight:400}
+.link>span{font-size:17px;color:var(--mist);line-height:1.3}
+.side-note{font-size:16px;color:var(--mist);line-height:1.45;margin:0}
+.win{width:956px;justify-self:end;border-radius:14px;overflow:hidden;background:var(--app-bg);box-shadow:0 0 0 1px #2a3a52,0 40px 90px rgba(0,0,0,.5)}
+.win-bar{height:36px;background:#e7ebf1;display:flex;align-items:center;gap:8px;padding:0 14px}
+.win-bar i{width:11px;height:11px;border-radius:50%;background:#cbd5e1}
+.win-bar span{margin-left:14px;flex:1;max-width:420px;height:22px;border-radius:6px;background:#fff;font-size:12px;color:var(--app-muted);display:flex;align-items:center;padding:0 10px;font-family:var(--f-app)}
+.win-body{width:1240px;height:880px;transform:scale(.771);transform-origin:0 0;margin-bottom:-201px;margin-right:-284px;font-family:var(--f-app);color:var(--app-text);font-size:14px}
+.w-nav{height:56px;background:#fff;border-bottom:1px solid var(--app-border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;color:var(--navy);font-size:16px;font-weight:600}
+.w-nav b{font-weight:800}
+.w-user{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:500;color:var(--app-text)}
+.w-role{font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;background:#eef4fb;color:var(--navy);text-transform:uppercase;letter-spacing:.04em}
+.w-main{padding:20px 24px}
+.w-tabs{display:flex;gap:4px;border-bottom:1px solid var(--app-border);margin-bottom:18px}
+.w-tab{border-bottom:2px solid transparent;color:var(--app-muted);padding:10px 16px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:7px;margin-bottom:-1px;transition:all .25s}
+.w-tab .ms{font-size:16px}
+.w-tab.active{color:var(--navy);border-bottom-color:var(--navy);font-weight:600}
+.w-tab.press{background:#eef4fb}
+.w-panel{opacity:0;transform:translateY(12px);transition:opacity .5s var(--ease),transform .5s var(--ease)}
+.w-panel.on{opacity:1;transform:none}
+.w-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:18px}
+.w-head h3{margin:0 0 3px;font-size:16px;font-weight:700}
+.w-head p{margin:0;color:var(--app-muted);font-size:13px}
+.w-filters{display:flex;gap:10px;align-items:flex-end}
+.w-filter{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:600;color:var(--app-muted);text-transform:uppercase;letter-spacing:.04em}
+.w-filter span{height:33px;border:1px solid var(--app-border);border-radius:6px;background:#fff;display:flex;align-items:center;padding:0 10px;font-size:13px;color:var(--app-text);text-transform:none;letter-spacing:0;font-weight:500;gap:18px}
+.w-btn{height:35px;padding:0 14px;border-radius:6px;background:var(--navy);color:#fff;display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600}
+.w-btn .ms{font-size:16px}
+.w-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:20px}
+.w-glass{background:rgba(255,255,255,.85);border:1px solid rgba(255,255,255,.3);box-shadow:0 8px 32px rgba(0,0,0,.04);border-radius:16px;padding:22px 24px}
+.w-card{display:flex;align-items:center;gap:16px;transition:box-shadow .4s,transform .4s}
+.w-card.lit{box-shadow:0 0 0 3px var(--brass),0 12px 40px rgba(0,0,0,.08);transform:translateY(-2px)}
+.w-icon{width:56px;height:56px;border-radius:14px;display:grid;place-items:center;color:#fff;font-size:26px}
+.w-icon.b{background:linear-gradient(135deg,#3b82f6,#2563eb)}.w-icon.p{background:linear-gradient(135deg,#a855f7,#7c3aed)}.w-icon.g{background:linear-gradient(135deg,#10b981,#059669)}
+.w-val{font-size:32px;font-weight:800;color:var(--navy);line-height:1.1;font-variant-numeric:tabular-nums}
+.w-lbl{font-size:13px;color:var(--app-muted);font-weight:500}
+.w-charts{display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:20px}
+.w-box h4{margin:0 0 14px;font-size:15px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:8px}
+.w-box h4 .ms{font-size:18px}
+.w-box svg{display:block;width:100%;height:200px;overflow:visible}
+.w-box svg text{font-family:var(--f-app);font-size:11px;fill:#666}
+.ln-path{fill:none;stroke:#2563eb;stroke-width:3;stroke-linejoin:round}
+.ln-area{fill:rgba(37,99,235,.1);opacity:0;transition:opacity .8s}
+.ln-area.on{opacity:1}
+.ln-pt{fill:rgba(37,99,235,.1);stroke:#2563eb;stroke-width:1;opacity:0;transition:opacity .3s}
+.ln-pt.on{opacity:1}
+.grid-l{stroke:rgba(0,0,0,.1);stroke-dasharray:4 4}
+.dn{fill:none;stroke-width:24}
+.dn-leg{display:flex;justify-content:center;gap:16px;font-size:12px;color:#666;margin-top:8px}
+.dn-leg span{display:flex;align-items:center;gap:6px}
+.dn-leg i{width:34px;height:11px;display:inline-block}
+.dn-wrap{position:relative}
+.dn-center{position:absolute;left:0;right:0;top:64px;text-align:center;font-weight:800;font-size:28px;color:var(--navy);font-variant-numeric:tabular-nums}
+.dn-center small{display:block;font-size:11px;font-weight:600;color:var(--app-muted);text-transform:uppercase;letter-spacing:.05em}
+.w-tables{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.w-table{width:100%;border-collapse:collapse;font-size:13.5px;color:var(--app-text);font-family:var(--f-app)}
+.w-table th{color:var(--app-muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.4px;padding:10px 0;text-align:left;border-bottom:2px solid var(--app-border)}
+.w-table td{padding:11px 0;border-bottom:1px solid var(--app-border)}
+.w-table tr:last-child td{border-bottom:none}
+.w-table tbody tr{opacity:0;transform:translateX(-14px);transition:opacity .4s var(--ease),transform .4s var(--ease)}
+.w-table tbody tr.on{opacity:1;transform:none}
+
+/* ── S6 beneficios ── */
+.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin-top:48px}
+.who{border:1px solid var(--line);border-radius:20px;padding:30px;background:rgba(26,47,78,.3);display:flex;flex-direction:column;gap:16px;min-width:0}
+.who .ms{font-size:40px;color:var(--brass)}
+.who h3{margin:0;font-family:var(--f-display);font-size:32px;font-weight:500;letter-spacing:-.005em}
+.who ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+.who li{font-size:20px;color:var(--mist);line-height:1.4;padding-left:22px;position:relative}
+.who li::before{content:"";position:absolute;left:0;top:.6em;width:10px;height:2px;background:var(--brass)}
+.mini{margin-top:auto;background:var(--app-surface);color:var(--app-text);border-radius:12px;padding:14px;font-family:var(--f-app);font-size:14px}
+.chk{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-top:1px solid var(--app-border)}
+.chk:first-child{border-top:0}
+.chk i{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:13px;background:var(--app-bg);color:var(--app-muted);transition:all .3s}
+.chk i.okk{background:var(--st-clean-bg);color:var(--st-clean)}
+.chk i.bad{background:#fee2e2;color:#b91c1c}
+.csv{display:flex;align-items:center;gap:12px}
+.csv .ms{font-size:30px;color:var(--st-clean)}
+.csv b{display:block;font-size:15px}
+.csv span{font-size:12px;color:var(--app-muted)}
+
+/* ── S7 cómo se hizo ── */
+.timeline{position:relative;display:grid;grid-template-columns:repeat(5,1fr);gap:24px;margin-top:70px}
+.timeline::before{content:"";position:absolute;left:0;right:0;top:27px;height:2px;background:var(--line)}
+.timeline .prog{position:absolute;left:0;top:27px;height:2px;background:var(--brass);width:0}
+.slide.active .timeline .prog{animation:grow 3.2s var(--ease) .4s forwards}
+@keyframes grow{to{width:100%}}
+.step{display:flex;flex-direction:column;gap:14px;position:relative;min-width:0}
+.step .n{width:56px;height:56px;border-radius:50%;background:var(--night);border:1.5px solid var(--brass);display:grid;place-items:center;font-family:var(--f-app);font-weight:400;color:var(--brass);font-size:19px;position:relative;z-index:1}
+.step h3{margin:6px 0 0;font-family:var(--f-display);font-size:28px;font-weight:500;letter-spacing:-.005em}
+.step p{margin:0;font-size:19px;color:var(--mist);line-height:1.45}
+.step code{font-family:var(--f-mono);font-size:15px;color:var(--brass);background:var(--brass-soft);padding:2px 7px;border-radius:5px;align-self:flex-start}
+.note{margin-top:56px;font-size:21px;color:var(--mist);display:flex;gap:12px;align-items:center}
+.note .ms{color:var(--brass)}
+
+/* ── S8 arquitectura ── */
+.arch{display:grid;grid-template-columns:1fr 90px 1fr 90px 1fr;align-items:stretch;margin-top:56px}
+.layer{border:1px solid var(--line);border-radius:22px;padding:30px;background:rgba(10,21,36,.7);display:flex;flex-direction:column;gap:14px;position:relative;min-width:0}
+.layer.hot{border-color:var(--brass);box-shadow:0 0 0 4px var(--brass-soft)}
+.layer .ms{font-size:42px;color:var(--brass)}
+.layer h3{margin:0;font-family:var(--f-display);font-size:31px;font-weight:500}
+.layer .role{font-size:19px;color:var(--ink);opacity:.85}
+.layer ul{margin:4px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+.layer li{font-family:var(--f-mono);font-size:15px;color:var(--mist)}
+.layer li b{color:var(--ink);font-weight:600}
+.wire{position:relative;align-self:center;height:2px;background:repeating-linear-gradient(90deg,var(--line) 0 8px,transparent 8px 14px)}
+.packet{position:absolute;top:-7px;left:0;width:16px;height:16px;border-radius:50%;background:var(--brass);box-shadow:0 0 18px 4px rgba(227,174,79,.6);opacity:0}
+.packet.go{animation:travel .9s var(--ease) forwards}
+.packet.back{animation:travelBack .9s var(--ease) forwards;background:#4ade80;box-shadow:0 0 18px 4px rgba(74,222,128,.55)}
+@keyframes travel{0%{left:0;opacity:0}15%{opacity:1}85%{opacity:1}100%{left:calc(100% - 16px);opacity:0}}
+@keyframes travelBack{0%{left:calc(100% - 16px);opacity:0}15%{opacity:1}85%{opacity:1}100%{left:0;opacity:0}}
+.reqlog{margin-top:34px;font-family:var(--f-mono);font-size:18px;color:var(--mist);display:flex;gap:28px;flex-wrap:wrap}
+.reqlog span{transition:color .3s}
+.reqlog span.on{color:var(--brass)}
+
+/* ── S9 seguridad ── */
+.sec{grid-template-columns:.85fr 1.15fr;gap:64px;align-items:center}
+.vault{border:1px solid var(--line);border-radius:24px;padding:40px;background:rgba(10,21,36,.75);display:flex;flex-direction:column;gap:22px}
+.vault .lbl{font-family:var(--f-app);font-weight:500;font-size:14px;letter-spacing:.12em;text-transform:uppercase;color:var(--mist)}
+.pinbig{font-family:var(--f-display);font-size:96px;font-weight:300;letter-spacing:.2em;line-height:1}
+.hash{font-family:var(--f-mono);font-size:22px;color:var(--brass);word-break:break-all;line-height:1.5;min-height:3em}
+.vault .ms.lock{font-size:50px;color:var(--brass)}
+.pillars{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.pillar{border:1px solid var(--line);border-radius:16px;padding:22px;display:flex;gap:16px;align-items:flex-start;background:rgba(26,47,78,.28);min-width:0}
+.pillar .ms{font-size:30px;color:var(--brass);flex:none}
+.pillar h3{margin:0 0 4px;font-size:21px;font-weight:700}
+.pillar p{margin:0;font-size:17px;color:var(--mist);line-height:1.4}
+
+/* ── S10 escalabilidad ── */
+.scale{grid-template-columns:1fr 1fr;gap:64px;align-items:center}
+.grow{display:grid;grid-template-columns:repeat(12,1fr);gap:8px;align-content:center}
+.grow i{aspect-ratio:1;border-radius:5px;background:var(--line);opacity:0}
+.slide.active .grow i{animation:pix .45s var(--ease) both;animation-delay:var(--q)}
+.grow i.today{background:var(--brass)}
+.legend{display:flex;gap:28px;margin-top:20px;font-size:17px;color:var(--mist)}
+.legend span{display:flex;align-items:center;gap:10px}
+.legend i{width:16px;height:16px;border-radius:4px;display:inline-block}
+.points{display:flex;flex-direction:column;gap:22px}
+.point{display:grid;grid-template-columns:48px 1fr;gap:18px}
+.point .ms{font-size:34px;color:var(--brass)}
+.point h3{margin:0 0 4px;font-family:var(--f-display);font-size:28px;font-weight:500}
+.point p{margin:0;font-size:19px;color:var(--mist);line-height:1.45}
+.thanks{margin-top:18px;padding-top:26px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-end}
+.thanks b{font-family:var(--f-display);font-size:54px;font-weight:300;letter-spacing:-.02em}
+.thanks span{font-size:21px;color:var(--mist)}
+
+/* ── Controles ── */
+.chrome{position:fixed;left:0;right:0;bottom:0;padding:10px max(16px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:14px;font-family:var(--f-app);font-size:13px;color:var(--mist)}
+.chrome button{font:inherit;color:var(--ink);background:rgba(26,47,78,.6);border:1px solid var(--line);border-radius:10px;height:38px;min-width:38px;padding:0 12px;display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+.chrome button:hover{border-color:var(--brass)}
+.chrome button:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+.chrome button.on{background:var(--brass);color:var(--night);border-color:var(--brass)}
+.chrome .ms{font-size:20px}
+.track{flex:1;height:4px;background:var(--line);border-radius:4px;overflow:hidden;min-width:40px}
+.track i{display:block;height:100%;width:0;background:var(--brass);transition:width .5s var(--ease)}
+.count-lbl{font-variant-numeric:tabular-nums;white-space:nowrap}
+@media (max-width:640px){.chrome .lbl-txt{display:none}}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001s!important;animation-delay:0s!important;animation-iteration-count:1!important;transition-duration:.001s!important}
+}
+</style>
+
+<div class="viewport" id="viewport">
+<div class="stage" id="stage">
+  <div class="bg"><div class="blob" id="blob"></div><div class="blob b2" id="blob2"></div></div>
+
+  <!-- 1 · Portada -->
+  <section class="slide cover" data-dur="9" data-blob="30%,-35%,72%,50%">
+    <div class="stack">
+      <div class="eyebrow in" style="--d:.1s">HOES UADE · Hotel Escuela · Sede Costa</div>
+      <h1><span class="reveal"><span style="--d:.25s">Housekeeping</span></span><br><span class="reveal"><span class="brass" style="--d:.45s">QR</span></span></h1>
+      <p class="lede in" style="--d:.9s">Cada habitación, registrada con <b>un escaneo</b>. Cada auditoría, con <b>nombre y hora</b>.</p>
+      <div class="byline in" style="--d:1.2s"><b>Lic. Nicolas Borda</b><span>·</span><span>Administración</span></div>
+    </div>
+    <div class="keytag in pop" style="--d:.5s">
+      <div class="room"><small>HABITACIÓN</small>104</div>
+      <div class="qr" data-qr="104" data-delay=".9"><div class="scanline"></div></div>
+      <div class="foot">ESCANEAR AL FINALIZAR LA LIMPIEZA</div>
+    </div>
+  </section>
+
+  <!-- 2 · Problema -->
+  <section class="slide split" data-dur="10" data-blob="-10%,10%,80%,-10%">
+    <div class="paper in left" style="--d:.2s">
+      <h4>Control de limpieza · Piso 1</h4>
+      <table>
+        <tr><th>HAB.</th><th>HORA</th><th>FIRMA</th><th>OBS.</th></tr>
+        <tr><td>101</td><td class="scrawl">10:1?</td><td class="scrawl">M. G…</td><td></td></tr>
+        <tr><td>102</td><td></td><td></td><td class="q">?</td></tr>
+        <tr><td>103</td><td class="scrawl">11:40</td><td class="scrawl">~~~</td><td class="scrawl">falta toalla</td></tr>
+        <tr><td>104</td><td></td><td></td><td></td></tr>
+        <tr><td>105</td><td class="scrawl">¿?</td><td></td><td class="q">?</td></tr>
+      </table>
+      <div class="stain"></div>
+    </div>
+    <div class="stack">
+      <div class="eyebrow in" style="--d:.1s">El punto de partida</div>
+      <h2><span class="reveal"><span style="--d:.2s">El control</span></span> <span class="reveal"><span style="--d:.35s">dependía del papel</span></span></h2>
+      <div class="pains">
+        <div class="pain in" style="--d:.9s"><span class="ms">help</span><div><h3>¿Está lista la 104?</h3><p>Para saberlo había que buscar la planilla o recorrer el piso.</p></div></div>
+        <div class="pain in" style="--d:1.2s"><span class="ms">badge</span><div><h3>Quién y cuándo, sin certeza</h3><p>Horas y firmas a mano, incompletas o ilegibles.</p></div></div>
+        <div class="pain in" style="--d:1.5s"><span class="ms">history</span><div><h3>Auditorías sin historial</h3><p>Las observaciones de la gobernanta no quedaban registradas.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · Qué es -->
+  <section class="slide split" data-dur="15" data-blob="55%,-20%,10%,60%" data-demo="phone">
+    <div class="stack">
+      <div class="eyebrow in" style="--d:.1s">Qué es</div>
+      <h2><span class="reveal"><span style="--d:.2s">Una app web,</span></span><br><span class="reveal"><span style="--d:.35s">dos miradas</span></span></h2>
+      <p class="lede in" style="--d:.7s">Sistema para <b>registrar y auditar</b> la limpieza de habitaciones con códigos QR, desde el celular o la tablet.</p>
+      <div class="caps">
+        <div class="cap in" data-cap="0" style="--d:1s"><span class="ms">qr_code_scanner</span><div><h3>Registrar</h3><p>El personal escanea el QR de la puerta al terminar.</p></div></div>
+        <div class="cap in" data-cap="1" style="--d:1.2s"><span class="ms">grid_view</span><div><h3>Supervisar</h3><p>Mapa en vivo de cada habitación con 5 estados.</p></div></div>
+        <div class="cap in" data-cap="2" style="--d:1.4s"><span class="ms">fact_check</span><div><h3>Auditar</h3><p>Checklist de 20 puntos, con observaciones.</p></div></div>
+      </div>
+    </div>
+    <div class="phone in pop" style="--d:.4s">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="navbar"><span><b>HOES</b> UADE</span><span class="ms" style="font-size:20px">logout</span></div>
+        <div class="view v-login on">
+          <div class="login-card">
+            <div class="login-icon"><span class="ms">shield</span></div>
+            <h1>HOES UADE</h1>
+            <div class="login-sub">Ingresa tu PIN de 4 dígitos</div>
+            <div class="pin-display"><i class="pin-dot"></i><i class="pin-dot"></i><i class="pin-dot"></i><i class="pin-dot"></i></div>
+            <div class="pin-keypad"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span class="ms" style="width:auto;height:52px;font-size:20px">backspace</span><span>0</span><span class="go"><span class="ms" style="font-size:20px">arrow_forward</span></span></div>
+          </div>
+        </div>
+        <div class="view v-cleaner">
+          <div class="scan-hero">
+            <span class="shift">Turno activo</span>
+            <h3>Hola, Ana</h3>
+            <p>Escanea el código QR de la habitación para registrar la limpieza</p>
+            <div class="btn-scan"><span class="ms">qr_code_scanner</span>Escanear QR</div>
+          </div>
+          <div class="section-card">
+            <div class="section-head"><h4>Mis registros de hoy</h4><span class="count" id="todayCount">2</span></div>
+            <div id="myLogs">
+              <div class="logrow"><b>Hab. 102</b><span>09:52</span></div>
+              <div class="logrow"><b>Hab. 101</b><span>09:18</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="view v-camera" style="inset:0;padding:0">
+          <div class="camera">
+            <div class="frame"><div class="qr small" data-qr="104s"><div class="scanline"></div></div></div>
+            <p>Apuntá al código de la habitación</p>
+          </div>
+          <div class="modal"><div class="ok"><span class="ms">check</span></div><h4>Habitación 104</h4><p>Limpieza finalizada · 10:31</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · Ventajas -->
+  <section class="slide" data-dur="11" data-blob="10%,-40%,85%,20%" style="align-content:start">
+    <div class="stack" style="gap:18px">
+      <div class="eyebrow in" style="--d:.1s">Ventajas</div>
+      <h2><span class="reveal"><span style="--d:.2s">Antes y</span></span> <span class="reveal"><span class="brass" style="--d:.35s">ahora</span></span></h2>
+    </div>
+    <div class="compare">
+      <span></span><span class="h in fade" style="--d:.5s">Antes</span><span></span><span class="h in fade" style="--d:.5s">Con Housekeeping QR</span>
+      <span class="k in fade" style="--d:.7s">Registro</span><span class="old in left" style="--d:.7s">Planilla completada a mano</span><span class="arrow ms in fade" style="--d:1.1s">arrow_forward</span><span class="new in" style="--d:1.2s">Escaneo QR en la habitación</span>
+      <span class="k in fade" style="--d:1.2s">Estado</span><span class="old in left" style="--d:1.2s">Preguntar o recorrer el piso</span><span class="arrow ms in fade" style="--d:1.6s">arrow_forward</span><span class="new in" style="--d:1.7s">Mapa en vivo, por piso y estado</span>
+      <span class="k in fade" style="--d:1.7s">Auditoría</span><span class="old in left" style="--d:1.7s">Observación verbal</span><span class="arrow ms in fade" style="--d:2.1s">arrow_forward</span><span class="new in" style="--d:2.2s">Checklist de 20 ítems con notas</span>
+      <span class="k in fade" style="--d:2.2s">Reportes</span><span class="old in left" style="--d:2.2s">Transcribir planillas</span><span class="arrow ms in fade" style="--d:2.6s">arrow_forward</span><span class="new in" style="--d:2.7s">Exportación CSV en un clic</span>
+      <span class="k in fade" style="--d:2.7s">Responsable</span><span class="old in left" style="--d:2.7s">Firma ilegible</span><span class="arrow ms in fade" style="--d:3.1s">arrow_forward</span><span class="new in" style="--d:3.2s">PIN personal: nombre y hora exactos</span>
+    </div>
+  </section>
+
+  <!-- 5 · Impacto -->
+  <section class="slide impact" data-dur="14" data-blob="45%,0%,-5%,-20%" data-demo="grid">
+    <div class="stack" style="gap:22px">
+      <div class="eyebrow in" style="--d:.1s">Impacto</div>
+      <h2 style="font-size:72px"><span class="reveal"><span style="--d:.2s">Del registro</span></span><br><span class="reveal"><span style="--d:.35s">al dato</span></span></h2>
+      <div class="panel in" style="--d:.6s">
+        <div class="bar"><span>Recepción · Estado</span><span class="live">En vivo</span></div>
+        <div class="stats-row">
+          <div class="stat"><b id="sTotal">10</b><span>Total</span></div>
+          <div class="stat p"><b id="sPend">10</b><span>Pendientes</span></div>
+          <div class="stat c"><b id="sClean">0</b><span>Limpias</span></div>
+          <div class="stat k"><b id="sChk">0</b><span>Chequeadas</span></div>
+        </div>
+        <div class="floor">Piso 1</div><div class="rooms" id="rooms1"></div>
+        <div class="floor">Piso 2</div><div class="rooms" id="rooms2"></div>
+      </div>
+    </div>
+    <div class="kpis">
+      <div class="kpi in" style="--d:1.2s"><b><span data-count="kpiTiempo">0</span><small>min</small></b><span>Tiempo promedio de limpieza por habitación</span></div>
+      <div class="kpi in" style="--d:1.5s"><b><span data-count="kpiAprob">0</span><small>%</small></b><span>Auditorías aprobadas sin observaciones</span></div>
+      <div class="kpi in" style="--d:1.8s"><b><span data-count="kpiLimpiezas">0</span></b><span>Limpiezas registradas en el período</span></div>
+      <p class="in fade" style="--d:2.2s;margin:0;font-size:18px;color:var(--mist);line-height:1.45">El sistema calcula estas métricas solo, junto con los ítems más observados y la productividad por persona.</p>
+    </div>
+  </section>
+
+  <!-- 5b · Estadísticas (perfil Admin General) -->
+  <section class="slide statsl" data-dur="14" data-blob="-20%,-30%,80%,45%" data-demo="stats">
+    <div class="stack" style="gap:22px">
+      <div class="eyebrow in" style="--d:.1s">Impacto · Vista administrador</div>
+      <h2 style="font-size:64px"><span class="reveal"><span style="--d:.2s">Los números</span></span><br><span class="reveal"><span style="--d:.35s">salen de </span></span><span class="reveal"><span class="brass" style="--d:.5s">la app</span></span></h2>
+      <p class="side-note in" style="--d:.7s">Pestaña Estadísticas del perfil Admin General. Filtra por fechas y calcula todo dentro de la base de datos.</p>
+      <div class="links">
+        <div class="link in" data-link="0" style="--d:.9s"><b data-k="limpiezas">0</b><span>Limpiezas realizadas</span></div>
+        <div class="link in" data-link="1" style="--d:1.05s"><b><span data-k="tiempo">0</span><small>min</small></b><span>Tiempo promedio por habitación</span></div>
+        <div class="link in" data-link="2" style="--d:1.2s"><b><span data-k="aprob">0</span><small>%</small></b><span>Checklists aprobados sin observaciones</span></div>
+      </div>
+    </div>
+    <div class="win in pop" style="--d:.35s">
+      <div class="win-bar"><i></i><i></i><i></i><span>hotel-qr-housekeeping.vercel.app</span></div>
+      <div class="win-body">
+        <div class="w-nav"><span><b>HOES</b> UADE</span><span class="w-user">Admin General <span class="w-role">Superadmin</span><span class="ms" style="font-size:20px;color:var(--navy)">logout</span></span></div>
+        <div class="w-main">
+          <div class="w-tabs">
+            <span class="w-tab" data-t="map"><span class="ms">grid_view</span>Estado</span>
+            <span class="w-tab"><span class="ms">checklist</span>Limpiezas</span>
+            <span class="w-tab"><span class="ms">fact_check</span>Checklists</span>
+            <span class="w-tab"><span class="ms">print</span>Códigos QR</span>
+            <span class="w-tab" data-t="stats"><span class="ms">pie_chart</span>Estadísticas</span>
+            <span class="w-tab"><span class="ms">settings</span>Gestión</span>
+          </div>
+          <div class="w-panel">
+            <div class="w-head">
+              <div><h3>Dashboard de Estadísticas</h3><p>Métricas de limpieza y control de calidad</p></div>
+              <div class="w-filters">
+                <label class="w-filter">Desde<span id="wFrom"></span></label>
+                <label class="w-filter">Hasta<span id="wTo"></span></label>
+                <span class="w-btn"><span class="ms">filter_alt</span>Filtrar</span>
+              </div>
+            </div>
+            <div class="w-cards">
+              <div class="w-glass w-card" data-card="0"><div class="w-icon b"><span class="ms">cleaning_services</span></div><div><div class="w-val" data-w="limpiezas">0</div><div class="w-lbl">Limpiezas Realizadas</div></div></div>
+              <div class="w-glass w-card" data-card="1"><div class="w-icon p"><span class="ms">timer</span></div><div><div class="w-val"><span data-w="tiempo">0</span> min</div><div class="w-lbl">T. Promedio / Hab.</div></div></div>
+              <div class="w-glass w-card" data-card="2"><div class="w-icon g"><span class="ms">done_all</span></div><div><div class="w-val"><span data-w="aprob">0</span>%</div><div class="w-lbl">Aprobación (Sin obs.)</div></div></div>
+            </div>
+            <div class="w-charts">
+              <div class="w-glass w-box"><h4>Actividad de Limpiezas</h4><svg id="chartAct" viewBox="0 0 740 200" preserveAspectRatio="none"></svg></div>
+              <div class="w-glass w-box"><h4>Calidad (Checklists)</h4>
+                <div class="dn-wrap">
+                  <svg viewBox="0 0 200 200" style="height:168px" aria-hidden="true">
+                    <g transform="rotate(-90 100 100)"><circle class="dn" id="dnPass" cx="100" cy="100" r="68" stroke="#10b981"></circle><circle class="dn" id="dnFail" cx="100" cy="100" r="68" stroke="#f59e0b"></circle></g>
+                  </svg>
+                  <div class="dn-center"><span id="dnTotal">0</span><small>checklists</small></div>
+                </div>
+                <div class="dn-leg"><span><i style="background:#10b981"></i>Aprobado (Sin Obs)</span><span><i style="background:#f59e0b"></i>Con Observaciones</span></div>
+              </div>
+            </div>
+            <div class="w-tables">
+              <div class="w-glass w-box"><h4><span class="ms">warning</span>Ítems más problemáticos</h4><table class="w-table"><thead><tr><th>Ítem</th><th>Frecuencia de fallo</th></tr></thead><tbody id="wFails"></tbody></table></div>
+              <div class="w-glass w-box"><h4><span class="ms">group</span>Rendimiento por Empleado</h4><table class="w-table"><thead><tr><th>Empleado</th><th>Limpiezas</th></tr></thead><tbody id="wEmps"></tbody></table></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 · Beneficio -->
+  <section class="slide" data-dur="12" data-blob="20%,30%,60%,-30%" data-demo="checklist" style="align-content:start">
+    <div class="stack" style="gap:18px">
+      <div class="eyebrow in" style="--d:.1s">Beneficio</div>
+      <h2><span class="reveal"><span style="--d:.2s">Cada actor</span></span> <span class="reveal"><span style="--d:.35s">gana algo</span></span></h2>
+    </div>
+    <div class="trio">
+      <div class="who in" style="--d:.6s">
+        <span class="ms">cleaning_services</span><h3>Personal de limpieza</h3>
+        <ul><li>Ingresa con un PIN de 4 dígitos</li><li>Ve su conteo del día y no olvida habitaciones</li></ul>
+        <div class="mini"><div class="section-head"><h4>Mis registros de hoy</h4><span class="count">3</span></div><div class="logrow"><b>Hab. 104</b><span>10:31</span></div><div class="logrow"><b>Hab. 102</b><span>09:52</span></div></div>
+      </div>
+      <div class="who in" style="--d:.85s">
+        <span class="ms">assignment_turned_in</span><h3>Gobernanta</h3>
+        <ul><li>Sabe qué habitación auditar primero</li><li>Registra hallazgos ítem por ítem</li></ul>
+        <div class="mini" id="miniChk">
+          <div class="chk"><span>Presentación de la cama</span><i>·</i></div>
+          <div class="chk"><span>Grifería</span><i>·</i></div>
+          <div class="chk"><span>Espejo</span><i>·</i></div>
+        </div>
+      </div>
+      <div class="who in" style="--d:1.1s">
+        <span class="ms">school</span><h3>Institución</h3>
+        <ul><li>Trazabilidad completa para calidad</li><li>Datos reales para la formación en el Hotel Escuela</li></ul>
+        <div class="mini csv"><span class="ms">download</span><div><b>limpiezas_octubre.csv</b><span>Historial filtrado por fecha y empleado</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 · Cómo se hizo -->
+  <section class="slide" data-dur="11" data-blob="-15%,-10%,75%,40%" style="align-content:start">
+    <div class="stack" style="gap:18px">
+      <div class="eyebrow in" style="--d:.1s">Cómo se hizo</div>
+      <h2><span class="reveal"><span style="--d:.2s">De la planilla</span></span> <span class="reveal"><span style="--d:.35s">a la nube</span></span></h2>
+    </div>
+    <div class="timeline">
+      <i class="prog"></i>
+      <div class="step in" style="--d:.5s"><span class="n">01</span><h3>Relevamiento</h3><p>Proceso real del HOES y su checklist en papel.</p></div>
+      <div class="step in" style="--d:1.1s"><span class="n">02</span><h3>Prototipo</h3><p>Servidor local con datos de prueba.</p><code>Node + Express</code></div>
+      <div class="step in" style="--d:1.7s"><span class="n">03</span><h3>Base de datos</h3><p>Migración a una base relacional de 4 tablas.</p><code>PostgreSQL</code></div>
+      <div class="step in" style="--d:2.3s"><span class="n">04</span><h3>Producción</h3><p>API sin servidores que mantener.</p><code>Vercel</code></div>
+      <div class="step in" style="--d:2.9s"><span class="n">05</span><h3>Blindaje</h3><p>PIN cifrado, índices y estadísticas en la base.</p><code>bcrypt + RPC</code></div>
+    </div>
+    <div class="note in fade" style="--d:3.6s"><span class="ms">menu_book</span>Se entrega con un manual de procedimiento por rol.</div>
+  </section>
+
+  <!-- 8 · Arquitectura -->
+  <section class="slide" data-dur="13" data-blob="35%,-40%,40%,60%" data-demo="arch" style="align-content:start">
+    <div class="stack" style="gap:18px">
+      <div class="eyebrow in" style="--d:.1s">Estructura y tecnología</div>
+      <h2><span class="reveal"><span style="--d:.2s">Tres capas,</span></span> <span class="reveal"><span style="--d:.35s">un recorrido</span></span></h2>
+    </div>
+    <div class="arch">
+      <div class="layer in" data-layer="0" style="--d:.5s"><span class="ms">smartphone</span><h3>Interfaz</h3><div class="role">Lo que ve cada usuario</div>
+        <ul><li><b>HTML · CSS · JavaScript</b></li><li>Lector QR con la cámara</li><li>Gráficos y exportación</li></ul></div>
+      <div class="wire in fade" style="--d:.8s"><i class="packet" data-wire="0"></i></div>
+      <div class="layer in" data-layer="1" style="--d:.9s"><span class="ms">bolt</span><h3>API serverless</h3><div class="role">Lo que valida y decide</div>
+        <ul><li><b>Node.js en Vercel</b></li><li>8 endpoints</li><li>Sesiones con JWT</li></ul></div>
+      <div class="wire in fade" style="--d:1.2s"><i class="packet" data-wire="1"></i></div>
+      <div class="layer in" data-layer="2" style="--d:1.3s"><span class="ms">database</span><h3>Base de datos</h3><div class="role">Lo que guarda y calcula</div>
+        <ul><li><b>Supabase · PostgreSQL</b></li><li>4 tablas · 8 índices</li><li>Función de estadísticas</li></ul></div>
+    </div>
+    <div class="reqlog in fade" style="--d:1.6s">
+      <span data-log="0">① escaneo hab. 104</span><span data-log="1">② POST /api/scan + token</span><span data-log="2">③ INSERT en logs</span><span data-log="3">④ mapa actualizado</span>
+    </div>
+  </section>
+
+  <!-- 9 · Seguridad -->
+  <section class="slide sec" data-dur="12" data-blob="-10%,20%,70%,-30%" data-demo="hash">
+    <div class="vault in pop" style="--d:.4s">
+      <span class="ms lock">lock</span>
+      <span class="lbl">PIN ingresado</span>
+      <div class="pinbig">••••</div>
+      <span class="lbl">Lo que se guarda</span>
+      <div class="hash" id="hash">&nbsp;</div>
+    </div>
+    <div class="stack" style="gap:26px">
+      <div class="eyebrow in" style="--d:.1s">Seguridad</div>
+      <h2 style="font-size:76px"><span class="reveal"><span style="--d:.2s">Confiable</span></span> <span class="reveal"><span style="--d:.35s">por diseño</span></span></h2>
+      <div class="pillars">
+        <div class="pillar in" style="--d:.8s"><span class="ms">key</span><div><h3>PIN cifrado</h3><p>Se guarda con bcrypt; nunca en texto plano ni en respuestas.</p></div></div>
+        <div class="pillar in" style="--d:1s"><span class="ms">timer</span><div><h3>Sesión que vence</h3><p>Token firmado (JWT) válido por 12 horas.</p></div></div>
+        <div class="pillar in" style="--d:1.2s"><span class="ms">verified_user</span><div><h3>Acceso validado</h3><p>Todo endpoint, salvo el ingreso, exige sesión.</p></div></div>
+        <div class="pillar in" style="--d:1.4s"><span class="ms">domain</span><div><h3>Origen restringido</h3><p>La API responde solo al dominio oficial (CORS).</p></div></div>
+        <div class="pillar in" style="--d:1.6s"><span class="ms">vpn_key</span><div><h3>Claves en el servidor</h3><p>Credenciales de la base en variables de entorno.</p></div></div>
+        <div class="pillar in" style="--d:1.8s"><span class="ms">receipt_long</span><div><h3>Trazabilidad</h3><p>Cada escaneo y auditoría queda con autor y hora.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 · Escalabilidad + cierre -->
+  <section class="slide scale" data-dur="12" data-blob="50%,-30%,0%,40%">
+    <div class="stack" style="gap:22px">
+      <div class="eyebrow in" style="--d:.1s">Escalabilidad</div>
+      <h2 style="font-size:78px"><span class="reveal"><span style="--d:.2s">Hecho</span></span> <span class="reveal"><span class="brass" style="--d:.35s">para crecer</span></span></h2>
+      <div class="grow in fade" id="grow" style="--d:.5s"></div>
+      <div class="legend in fade" style="--d:1.4s"><span><i style="background:var(--brass)"></i>Hoy: Hotel Escuela</span><span><i style="background:var(--line)"></i>Mismo sistema, más habitaciones y sedes</span></div>
+    </div>
+    <div class="stack" style="gap:26px">
+      <div class="points">
+        <div class="point in" style="--d:.8s"><span class="ms">cloud</span><div><h3>Escala con la demanda</h3><p>La API serverless crece sola; no hay servidor que dimensionar.</p></div></div>
+        <div class="point in" style="--d:1.05s"><span class="ms">add_home</span><div><h3>Alta en segundos</h3><p>Habitaciones y pisos se agregan desde la app, con su QR generado.</p></div></div>
+        <div class="point in" style="--d:1.3s"><span class="ms">hub</span><div><h3>Modelo replicable</h3><p>La lógica QR + checklist sirve para otras sedes y otros procesos.</p></div></div>
+      </div>
+      <div class="thanks in" style="--d:1.8s"><div><b>Gracias</b><br><span>Lic. Nicolas Borda</span></div><span style="font-size:16px">hotel-qr-housekeeping.vercel.app</span></div>
+    </div>
+  </section>
+</div>
+</div>
+
+<div class="chrome">
+  <button id="prev" aria-label="Diapositiva anterior"><span class="ms">arrow_back</span></button>
+  <button id="next" aria-label="Diapositiva siguiente"><span class="ms">arrow_forward</span></button>
+  <button id="play" aria-label="Modo video"><span class="ms" id="playIco">play_arrow</span><span class="lbl-txt">Modo video</span></button>
+  <div class="track"><i id="trackBar"></i></div>
+  <span class="count-lbl" id="counter">1 / 10</span>
+  <button id="fs" aria-label="Pantalla completa"><span class="ms">fullscreen</span></button>
+</div>
+
+<script>
+/* ═══ DATOS EDITABLES ═══
+   Reemplazá estos valores con las métricas reales (pestaña Estadísticas de la app)
+   y poné ejemplo:false para ocultar la etiqueta "Valores de ejemplo". */
+const DATOS = {
+  desde: '2026-09-18', hasta: '2026-10-18',
+  // limpiezas completadas por día (una por día del período); el total de limpiezas es la suma
+  actividad: [9,11,10,12,8,8,8, 10,11,12,11,10,7,8, 11,12,10,11,12,8,7, 12,11,10,12,11,8,7, 11,12,12],
+  tiempoPromedio: 24,                  // minutos
+  checklists: { aprobados: 131, conObs: 19 },
+  fallos: [['Grifería', 9], ['Espejo', 7], ['Vidrios', 6]],
+  empleados: [['Ana Velázquez', 168], ['Claudia Maza', 144]]   // debe sumar el total de limpiezas
+};
+/* Indicadores derivados: los mismos números se usan en "Del registro al dato" y en "Estadísticas" */
+const K = (() => {
+  const limpiezas = DATOS.actividad.reduce((a, b) => a + b, 0);
+  const c = DATOS.checklists, totalChk = c.aprobados + c.conObs;
+  const aprob = totalChk ? Math.round(c.aprobados * 100 / totalChk) : 0;
+  const sumaEmp = DATOS.empleados.reduce((a, e) => a + e[1], 0);
+  if (sumaEmp !== limpiezas) console.warn(`Empleados suman ${sumaEmp} pero las limpiezas son ${limpiezas}`);
+  return { limpiezas, tiempo: DATOS.tiempoPromedio, aprob, totalChk, kpiLimpiezas: limpiezas, kpiTiempo: DATOS.tiempoPromedio, kpiAprob: aprob };
+})();
+
+(() => {
+  const stage = document.getElementById('stage');
+  const slides = [...stage.querySelectorAll('.slide')];
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let cur = 0, timers = [], playing = false, autoTimer = null;
+
+  /* escala del escenario 16:9 */
+  function fit() {
+    const vp = document.getElementById('viewport');
+    const cs = getComputedStyle(vp);
+    const w = vp.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    const h = vp.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    const s = Math.min(w / 1600, h / 900);
+    stage.style.transform = `scale(${s})`;
+    stage.style.margin = `${(900 * s - 900) / 2}px ${(1600 * s - 1600) / 2}px`;
+  }
+  addEventListener('resize', fit); fit();
+
+  /* códigos QR decorativos (patrón con esquinas de posición) */
+  function rng(seed) { let x = 0; for (const c of seed) x = (x * 31 + c.charCodeAt(0)) >>> 0; return () => ((x = (x * 1664525 + 1013904223) >>> 0) / 4294967296); }
+  function finder(r, c, n) {
+    for (const [fr, fc] of [[0, 0], [0, n - 7], [n - 7, 0]]) {
+      const y = r - fr, x = c - fc;
+      if (y >= 0 && y < 7 && x >= 0 && x < 7) return (y === 0 || y === 6 || x === 0 || x === 6 || (y >= 2 && y <= 4 && x >= 2 && x <= 4)) ? 1 : 0;
+      if (y >= -1 && y <= 7 && x >= -1 && x <= 7) return 0;
+    }
+    return -1;
+  }
+  document.querySelectorAll('[data-qr]').forEach(q => {
+    const n = 25, r = rng(q.dataset.qr), base = parseFloat(q.dataset.delay || 0);
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < n * n; i++) {
+      const row = Math.floor(i / n), col = i % n, f = finder(row, col, n);
+      const on = f === -1 ? r() > .52 : f === 1;
+      const el = document.createElement('i');
+      if (!on) el.className = 'off';
+      el.style.setProperty('--q', (base + (row + col) * 0.025 + r() * .25).toFixed(2) + 's');
+      frag.appendChild(el);
+    }
+    q.insertBefore(frag, q.firstChild);
+  });
+
+  /* grilla de escalabilidad */
+  const grow = document.getElementById('grow');
+  for (let i = 0; i < 96; i++) {
+    const el = document.createElement('i');
+    if (i < 10) el.className = 'today';
+    el.style.setProperty('--q', (0.6 + (i < 10 ? i * 0.06 : 0.8 + i * 0.012)).toFixed(2) + 's');
+    grow.appendChild(el);
+  }
+
+  /* habitaciones del panel */
+  const ROOMS = ['101','102','103','104','105','201','202','203','204','205'];
+  const LBL = { pending: 'Pendiente', cleaning: 'En limpieza', clean: 'Limpia', checked: 'Chequeada', checked_obs: 'Chequeada c/ obs.' };
+  const roomEls = {};
+  ROOMS.forEach(n => {
+    const d = document.createElement('div');
+    d.className = 'room-card';
+    d.innerHTML = `<div class="room-top">${n}<i class="status-dot"></i></div><span class="status-badge"></span>`;
+    document.getElementById(n[0] === '1' ? 'rooms1' : 'rooms2').appendChild(d);
+    roomEls[n] = d;
+  });
+  function setRoom(n, st, bump) {
+    const d = roomEls[n];
+    d.className = 'room-card s-' + st + (bump ? ' bump' : '');
+    d.querySelector('.status-badge').textContent = LBL[st];
+    const all = Object.values(roomEls).map(e => e.className);
+    const c = s => all.filter(x => x.includes('s-' + s + ' ') || x.endsWith('s-' + s)).length;
+    document.getElementById('sPend').textContent = c('pending') + c('cleaning');
+    document.getElementById('sClean').textContent = c('clean');
+    document.getElementById('sChk').textContent = c('checked') + c('checked_obs');
+  }
+
+
+  /* pestaña Estadísticas: fechas, gráfico de línea (estilo Chart.js de la app) y tablas */
+  const fmt = iso => iso.split('-').reverse().join('/');
+  const cal = '<span class="ms" style="font-size:15px;color:#64748b">calendar_today</span>';
+  document.getElementById('wFrom').innerHTML = fmt(DATOS.desde) + cal;
+  document.getElementById('wTo').innerHTML = fmt(DATOS.hasta) + cal;
+  const dayLabels = (() => { const out = [], d = new Date(DATOS.desde + 'T12:00:00'); for (let i = 0; i < DATOS.actividad.length; i++) { out.push(String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0')); d.setDate(d.getDate() + 1); } return out; })();
+  const chartAct = document.getElementById('chartAct');
+  (() => {
+    const NS = 'http://www.w3.org/2000/svg', W = 740, H = 200, L = 30, R = 8, T = 8, B = 26;
+    const v = DATOS.actividad, n = v.length, step = 2, max = Math.ceil(Math.max(...v) / step) * step;
+    const x = i => L + i * (W - L - R) / (n - 1), y = val => T + (H - T - B) * (1 - val / max);
+    const mk = (tag, attrs) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); chartAct.appendChild(e); return e; };
+    for (let t = 0; t <= max; t += step) { mk('line', { x1: L, x2: W - R, y1: y(t), y2: y(t), class: 'grid-l' }); mk('text', { x: L - 8, y: y(t) + 4, 'text-anchor': 'end' }).textContent = t; }
+    dayLabels.forEach((lb, i) => { if (i % 3 === 0 || i === n - 1) mk('text', { x: x(i), y: H - 6, 'text-anchor': 'middle' }).textContent = lb; });
+    let d = `M${x(0)},${y(v[0])}`;
+    for (let i = 0; i < n - 1; i++) {
+      const p0 = i ? i - 1 : i, p3 = i + 2 < n ? i + 2 : i + 1, k = 0.4 / 2;
+      d += ` C${x(i) + (x(i + 1) - x(p0)) * k},${y(v[i]) + (y(v[i + 1]) - y(v[p0])) * k} ${x(i + 1) - (x(p3) - x(i)) * k},${y(v[i + 1]) - (y(v[p3]) - y(v[i])) * k} ${x(i + 1)},${y(v[i + 1])}`;
+    }
+    mk('path', { d: d + ` L${x(n - 1)},${y(0)} L${x(0)},${y(0)} Z`, class: 'ln-area' });
+    const line = mk('path', { d, class: 'ln-path' });
+    v.forEach((val, i) => mk('circle', { cx: x(i), cy: y(val), r: 3, class: 'ln-pt' }));
+    chartAct._len = line.getTotalLength ? line.getTotalLength() : 2000;
+  })();
+  const CIRC = 2 * Math.PI * 68;
+  document.getElementById('wFails').innerHTML = DATOS.fallos.map(f => `<tr><td>${f[0]}</td><td><strong>${f[1]}</strong> veces</td></tr>`).join('');
+  document.getElementById('wEmps').innerHTML = DATOS.empleados.map(e => `<tr><td>${e[0]}</td><td><strong>${e[1]}</strong></td></tr>`).join('');
+
+  /* utilidades de línea de tiempo */
+  const at = (ms, fn) => timers.push(setTimeout(fn, reduce ? 0 : ms));
+  const clear = () => { timers.forEach(clearTimeout); timers = []; };
+
+  function countUp(el, to) {
+    if (reduce) { el.textContent = to; return; }
+    const t0 = performance.now(), dur = 1400;
+    const step = t => { const p = Math.min(1, (t - t0) / dur); el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3))); if (p < 1 && slides[cur].contains(el)) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  }
+
+  /* demos por diapositiva */
+  const demos = {
+    phone(s) {
+      const views = { login: s.querySelector('.v-login'), cleaner: s.querySelector('.v-cleaner'), camera: s.querySelector('.v-camera') };
+      const show = v => Object.entries(views).forEach(([k, el]) => el.classList.toggle('on', k === v));
+      const dots = s.querySelectorAll('.pin-dot'), keys = s.querySelectorAll('.pin-keypad > span');
+      const caps = s.querySelectorAll('.cap'), modal = s.querySelector('.modal');
+      const lit = i => caps.forEach((c, j) => c.classList.toggle('lit', j === i));
+      show('login'); dots.forEach(d => d.classList.remove('filled')); modal.classList.remove('on'); lit(-1);
+      s.querySelector('#todayCount').textContent = '2';
+      const extra = s.querySelector('.logrow.new'); if (extra) extra.remove();
+      [3, 7, 0, 5].forEach((k, i) => at(1800 + i * 450, () => {
+        const key = keys[k === 0 ? 10 : k - 1]; key.classList.add('press'); setTimeout(() => key.classList.remove('press'), 160);
+        dots[i].classList.add('filled');
+      }));
+      at(3900, () => { keys[11].classList.add('press'); setTimeout(() => keys[11].classList.remove('press'), 160); });
+      at(4300, () => { show('cleaner'); lit(0); s.querySelector('.btn-scan').classList.add('pulse'); });
+      at(6200, () => show('camera'));
+      at(8300, () => modal.classList.add('on'));
+      at(10200, () => {
+        show('cleaner'); modal.classList.remove('on'); lit(0);
+        s.querySelector('#todayCount').textContent = '3';
+        const row = document.createElement('div'); row.className = 'logrow new'; row.innerHTML = '<b>Hab. 104</b><span>10:31</span>';
+        s.querySelector('#myLogs').prepend(row);
+      });
+      at(11400, () => lit(1));
+      at(12600, () => lit(2));
+    },
+    grid() {
+      ROOMS.forEach(n => setRoom(n, 'pending'));
+      const seq = [
+        ['101','cleaning'],['204','cleaning'],['101','clean'],['102','cleaning'],['204','clean'],['201','cleaning'],
+        ['101','checked'],['102','clean'],['103','cleaning'],['201','clean'],['204','checked_obs'],['202','cleaning'],
+        ['102','checked'],['103','clean'],['104','cleaning'],['202','clean'],['201','checked'],['104','clean'],['205','cleaning'],['103','checked']
+      ];
+      seq.forEach(([n, st], i) => at(1300 + i * 520, () => setRoom(n, st, true)));
+      document.querySelectorAll('[data-count]').forEach((el, i) => at(1500 + i * 300, () => countUp(el, K[el.dataset.count])));
+    },
+    stats(s) {
+      const tabs = s.querySelectorAll('.w-tab'), map = s.querySelector('[data-t="map"]'), st = s.querySelector('[data-t="stats"]');
+      const panel = s.querySelector('.w-panel'), cards = s.querySelectorAll('.w-card'), links = s.querySelectorAll('.link');
+      const line = chartAct.querySelector('.ln-path'), area = chartAct.querySelector('.ln-area'), pts = chartAct.querySelectorAll('.ln-pt');
+      const pass = document.getElementById('dnPass'), fail = document.getElementById('dnFail');
+      const rows = s.querySelectorAll('.w-table tbody tr');
+      const c = DATOS.checklists, fp = K.totalChk ? c.aprobados / K.totalChk : 0;
+      tabs.forEach(t => t.classList.remove('active', 'press')); map.classList.add('active');
+      panel.classList.remove('on'); area.classList.remove('on'); pts.forEach(p => p.classList.remove('on')); rows.forEach(r => r.classList.remove('on'));
+      cards.forEach(x => x.classList.remove('lit')); links.forEach(x => x.classList.remove('lit'));
+      s.querySelectorAll('[data-w],[data-k]').forEach(e => e.textContent = '0'); document.getElementById('dnTotal').textContent = '0';
+      line.style.transition = 'none'; line.style.strokeDasharray = chartAct._len; line.style.strokeDashoffset = chartAct._len;
+      [pass, fail].forEach(e => { e.style.transition = 'none'; e.style.strokeDasharray = `0 ${CIRC}`; });
+      fail.style.strokeDashoffset = -fp * CIRC;
+      s.querySelectorAll('[data-k]').forEach((e, i) => at(1300 + i * 150, () => countUp(e, K[e.dataset.k])));
+      at(1500, () => st.classList.add('press'));
+      at(1750, () => { map.classList.remove('active'); st.classList.remove('press'); st.classList.add('active'); });
+      at(2000, () => panel.classList.add('on'));
+      s.querySelectorAll('[data-w]').forEach((e, i) => at(2400 + i * 200, () => countUp(e, K[e.dataset.w])));
+      at(2600, () => { line.style.transition = 'stroke-dashoffset 2.2s cubic-bezier(.4,0,.2,1)'; line.style.strokeDashoffset = 0; });
+      at(3400, () => area.classList.add('on'));
+      pts.forEach((p, i) => at(2600 + i * 70, () => p.classList.add('on')));
+      at(3000, () => {
+        [pass, fail].forEach(e => e.style.transition = 'stroke-dasharray 1.3s cubic-bezier(.4,0,.2,1)');
+        pass.style.strokeDasharray = `${fp * CIRC} ${CIRC}`; fail.style.strokeDasharray = `${(1 - fp) * CIRC} ${CIRC}`;
+        countUp(document.getElementById('dnTotal'), K.totalChk);
+      });
+      rows.forEach((r, i) => at(4000 + i * 160, () => r.classList.add('on')));
+      [0, 1, 2].forEach(i => at(6000 + i * 1600, () => {
+        cards.forEach((x, j) => x.classList.toggle('lit', j === i)); links.forEach((x, j) => x.classList.toggle('lit', j === i));
+      }));
+      at(10800, () => { cards.forEach(x => x.classList.remove('lit')); links.forEach(x => x.classList.remove('lit')); });
+    },
+    checklist(s) {
+      const marks = s.querySelectorAll('#miniChk i');
+      marks.forEach(m => { m.className = ''; m.textContent = '·'; });
+      [['okk','✓'],['bad','✕'],['okk','✓']].forEach(([c, t], i) => at(1800 + i * 700, () => { marks[i].className = c; marks[i].textContent = t; }));
+    },
+    arch(s) {
+      const layers = s.querySelectorAll('.layer'), logs = s.querySelectorAll('[data-log]'), packs = s.querySelectorAll('.packet');
+      const reset = () => { layers.forEach(l => l.classList.remove('hot')); logs.forEach(l => l.classList.remove('on')); packs.forEach(p => p.className = 'packet'); };
+      const cycle = base => {
+        at(base, () => { reset(); layers[0].classList.add('hot'); logs[0].classList.add('on'); });
+        at(base + 700, () => { packs[0].className = 'packet go'; logs[1].classList.add('on'); });
+        at(base + 1600, () => { layers[0].classList.remove('hot'); layers[1].classList.add('hot'); packs[1].className = 'packet go'; });
+        at(base + 2500, () => { layers[1].classList.remove('hot'); layers[2].classList.add('hot'); logs[2].classList.add('on'); packs[0].className = 'packet'; packs[1].className = 'packet'; });
+        at(base + 3200, () => { packs[1].className = 'packet back'; });
+        at(base + 4100, () => { layers[2].classList.remove('hot'); packs[0].className = 'packet back'; });
+        at(base + 5000, () => { layers[0].classList.add('hot'); logs[3].classList.add('on'); });
+      };
+      reset(); cycle(1900); cycle(7600);
+    },
+    hash() {
+      const el = document.getElementById('hash');
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789./';
+      const r = rng('hoes-pin'); let target = '$2b$10$';
+      while (target.length < 60) target += chars[Math.floor(r() * chars.length)];
+      el.textContent = ' ';
+      if (reduce) { el.textContent = target; return; }
+      let i = 0;
+      at(1200, function tick() {
+        i += 2;
+        el.textContent = target.slice(0, i) + Array.from({ length: Math.min(8, 60 - i) }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+        if (i < 60) timers.push(setTimeout(tick, 45)); else el.textContent = target;
+      });
+    }
+  };
+
+  /* navegación */
+  function go(i) {
+    i = Math.max(0, Math.min(slides.length - 1, i));
+    clear();
+    slides.forEach((s, j) => s.classList.toggle('active', j === i));
+    const s = slides[i];
+    /* reiniciar animaciones CSS */
+    s.querySelectorAll('.in,.reveal>span,.qr i,.grow i,.timeline .prog').forEach(el => { el.style.animation = 'none'; el.offsetHeight; el.style.animation = ''; });
+    const [bx, by, cx, cy] = (s.dataset.blob || '40%,-30%,70%,55%').split(',');
+    const root = document.getElementById('blob'), r2 = document.getElementById('blob2');
+    root.style.setProperty('--bx', bx); root.style.setProperty('--by', by);
+    r2.style.setProperty('--cx', cx); r2.style.setProperty('--cy', cy);
+    if (s.dataset.demo) demos[s.dataset.demo](s);
+    cur = i;
+    document.getElementById('counter').textContent = `${i + 1} / ${slides.length}`;
+    document.getElementById('trackBar').style.width = ((i + 1) / slides.length * 100) + '%';
+    try { history.replaceState(null, '', '#s' + (i + 1)); } catch (e) {}
+    if (playing) schedule();
+  }
+  function schedule() {
+    clearTimeout(autoTimer);
+    autoTimer = setTimeout(() => cur < slides.length - 1 ? go(cur + 1) : setPlay(false), (parseFloat(slides[cur].dataset.dur) || 10) * 1000);
+  }
+  function setPlay(on) {
+    playing = on; clearTimeout(autoTimer);
+    document.getElementById('play').classList.toggle('on', on);
+    document.getElementById('playIco').textContent = on ? 'pause' : 'play_arrow';
+    if (on) schedule();
+  }
+
+  document.getElementById('next').onclick = () => go(cur + 1);
+  document.getElementById('prev').onclick = () => go(cur - 1);
+  document.getElementById('play').onclick = () => setPlay(!playing);
+  document.getElementById('fs').onclick = () => {
+    const d = document.documentElement;
+    const p = document.fullscreenElement ? document.exitFullscreen() : (d.requestFullscreen ? d.requestFullscreen() : null);
+    if (p && p.catch) p.catch(() => {});
+  };
+  stage.addEventListener('click', e => { const r = stage.getBoundingClientRect(); go(e.clientX - r.left > r.width * .25 ? cur + 1 : cur - 1); });
+  addEventListener('keydown', e => {
+    if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); go(cur + 1); }
+    else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); go(cur - 1); }
+    else if (e.key === 'Home') go(0);
+    else if (e.key === 'End') go(slides.length - 1);
+    else if (e.key.toLowerCase() === 'p') setPlay(!playing);
+    else if (e.key.toLowerCase() === 'f') document.getElementById('fs').click();
+  });
+  let tx = null;
+  stage.addEventListener('touchstart', e => tx = e.touches[0].clientX, { passive: true });
+  stage.addEventListener('touchend', e => { if (tx === null) return; const dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 40) go(cur + (dx < 0 ? 1 : -1)); tx = null; });
+
+  const m = /^#s(\d+)$/.exec(location.hash);
+  go(m ? parseInt(m[1], 10) - 1 : 0);
+})();
+</script>
+
+</body></html>
